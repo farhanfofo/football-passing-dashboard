@@ -10,7 +10,21 @@ st.title("⚽ Football Passing Dashboard")
 
 # Sidebar Filters
 st.sidebar.header("Configuration")
-match_id = st.sidebar.number_input("Enter StatsBomb Match ID", value=3869685)
+
+# Dynamic Competition & Match Selection
+competitions = sb.competitions()
+selected_comp_name = st.sidebar.selectbox("Competition", competitions["competition_name"].unique())
+
+comp_row = competitions[competitions["competition_name"] == selected_comp_name]
+competition_id = comp_row["competition_id"].values[0]
+season_id = comp_row["season_id"].values[0]
+
+matches = sb.matches(competition_id=competition_id, season_id=season_id)
+match_options = {f"{row['home_team']} vs {row['away_team']} ({row['match_date']})": row['match_id'] for index, row in matches.iterrows()}
+
+selected_match_label = st.sidebar.selectbox("Select Match", list(match_options.keys()))
+match_id = match_options[selected_match_label]
+
 team_name = st.sidebar.text_input("Enter Team Name", value="Argentina")
 
 @st.cache_data
@@ -56,4 +70,4 @@ try:
 
 except Exception as e:
     st.error(f"Error loading match data: {e}")
-  
+    
