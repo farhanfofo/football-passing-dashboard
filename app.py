@@ -6,7 +6,7 @@ from statsbombpy import sb
 from mplsoccer import Pitch
 
 st.set_page_config(page_title="Football Analytics Dashboard", layout="wide")
-st.title("⚽ Football Passing Dashboard")
+st.title("⚽ Football Passing & Performance Dashboard")
 
 # Sidebar Filters
 st.sidebar.header("Configuration")
@@ -49,8 +49,43 @@ try:
     player_passes["x_end"] = player_passes["pass_end_location"].apply(lambda loc: loc[0])
     player_passes["y_end"] = player_passes["pass_end_location"].apply(lambda loc: loc[1])
 
-    st.markdown(f"### Pass Map: **{selected_player}**")
-    st.markdown(f"**Completed Passes:** `{len(player_passes)}` | **Total Match Events:** `{len(team_events[team_events['player'] == selected_player])}`")
+    # Calculate Performance Statistics
+    total_attempted_passes = len(team_events[
+        (team_events["player"] == selected_player) & 
+        (team_events["type"] == "Pass")
+    ])
+    completed_passes = len(player_passes)
+
+    if total_attempted_passes > 0:
+        pass_accuracy = (completed_passes / total_attempted_passes) * 100
+    else:
+        pass_accuracy = 0
+
+    # Goals calculation
+    player_shots = team_events[
+        (team_events["player"] == selected_player) & 
+        (team_events["type"] == "Shot")
+    ]
+    goals = len(player_shots[player_shots["shot_outcome"] == "Goal"])
+
+    # Assists calculation
+    assists = len(team_events[
+        (team_events["player"] == selected_player) & 
+        (team_events["type"] == "Pass") & 
+        (team_events["pass_goal_assist"] == True)
+    ])
+
+    # Display Metrics Summary
+    st.markdown(f"### Performance Summary: **{selected_player}**")
+    col1, col2, col3, col4, col5 = st.columns(5)
+    col1.metric("Goals", goals)
+    col2.metric("Assists", assists)
+    col3.metric("Passes Attempted", total_attempted_passes)
+    col4.metric("Completed Passes", completed_passes)
+    col5.metric("Pass Accuracy", f"{pass_accuracy:.1f}%")
+
+    st.markdown("---")
+    st.markdown(f"### Pass Map")
 
     pitch = Pitch(pitch_type='statsbomb', pitch_color='#101010', line_color='#c7d5cc')
     fig, ax = pitch.draw(figsize=(10, 6))
