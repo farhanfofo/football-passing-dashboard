@@ -49,7 +49,7 @@ try:
     player_passes["x_end"] = player_passes["pass_end_location"].apply(lambda loc: loc[0])
     player_passes["y_end"] = player_passes["pass_end_location"].apply(lambda loc: loc[1])
 
-    # Calculate Performance Statistics
+    # Calculate Performance Statistics Safely
     total_attempted_passes = len(team_events[
         (team_events["player"] == selected_player) & 
         (team_events["type"] == "Pass")
@@ -61,19 +61,31 @@ try:
     else:
         pass_accuracy = 0
 
-    # Goals calculation
-    player_shots = team_events[
-        (team_events["player"] == selected_player) & 
-        (team_events["type"] == "Shot")
-    ]
-    goals = len(player_shots[player_shots["shot_outcome"] == "Goal"])
+    # Safe Goals calculation
+    if "shot_outcome" in team_events.columns:
+        player_shots = team_events[
+            (team_events["player"] == selected_player) & 
+            (team_events["type"] == "Shot")
+        ]
+        goals = len(player_shots[player_shots["shot_outcome"] == "Goal"])
+    else:
+        goals = 0
 
-    # Assists calculation
-    assists = len(team_events[
-        (team_events["player"] == selected_player) & 
-        (team_events["type"] == "Pass") & 
-        (team_events["pass_goal_assist"] == True)
-    ])
+    # Safe Assists calculation
+    if "pass_goal_assist" in team_events.columns:
+        assists = len(team_events[
+            (team_events["player"] == selected_player) & 
+            (team_events["type"] == "Pass") & 
+            (team_events["pass_goal_assist"] == True)
+        ])
+    elif "pass_shot_assist" in team_events.columns:
+        assists = len(team_events[
+            (team_events["player"] == selected_player) & 
+            (team_events["type"] == "Pass") & 
+            (team_events["pass_shot_assist"] == True)
+        ])
+    else:
+        assists = 0
 
     # Display Metrics Summary
     st.markdown(f"### Performance Summary: **{selected_player}**")
